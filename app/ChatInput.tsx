@@ -1,5 +1,7 @@
 "use client";
 import React, { useState } from 'react'
+import { v4 as uuid } from 'uuid'
+import { Message } from '../typings';
 
 const ChatInput = () => {
     const [data, setData] = useState("");
@@ -11,6 +13,34 @@ const ChatInput = () => {
 
         const messageToSend = data;
         setData('');
+
+        const id = uuid();
+        
+        const message: Message = {
+            id,
+            message: messageToSend,
+            created_at: Date.now(),
+            userName: 'Evey201',
+            email: 'evey.alabi@gmail.com',
+            profile_pic: "https://scontent.fada2-2.fna.fbcdn.net/v/t1.6435-9/89858736_10219681338418354_8984255737014255616_n.jpg?_nc_cat=100&ccb=1-7&_nc_sid=09cbfe&_nc_ohc=Lx-PFkJ5RiYAX__gwgQ&_nc_ht=scontent.fada2-2.fna&oh=00_AfDHjhVvKjlRvhSNqIr1mHq6aggq53hIA_cKB_-RDTBQnQ&oe=63A0CCB0"
+        }
+
+        const uploadMessage = async () => {
+            let url = "/api/addMessage"
+            const res = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json" 
+                },
+                body: JSON.stringify({
+                    message
+                })
+            })
+            const data = await res.json();
+            console.log("message uploaded:: ", data)
+        }
+
+        uploadMessage()
     } 
   return (
     <>

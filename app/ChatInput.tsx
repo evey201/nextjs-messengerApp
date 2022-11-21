@@ -2,17 +2,23 @@
 import React, { useState } from 'react'
 import { v4 as uuid } from 'uuid'
 import { Message } from '../typings';
+import useSWR from 'swr'
+import fetcher from '../utils/fetchMessages';
+
 
 const ChatInput = () => {
-    const [data, setData] = useState("");
+    const [input, setInput] = useState("");
+    
+    const { data: messages, error, mutate } = useSWR("/api/getMessages", fetcher);
+    console.log(messages)
 
-    const addMessage = (e: React.FormEvent<HTMLFormElement>) => {
+    const addMessage = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         // console.log("triggered")
-        if (!data) return;
+        if (!input) return;
 
-        const messageToSend = data;
-        setData('');
+        const messageToSend = input;
+        setInput('');
 
         const id = uuid();
         
@@ -27,7 +33,7 @@ const ChatInput = () => {
 
         const uploadMessage = async () => {
             let url = "/api/addMessage"
-            const res = await fetch(url, {
+            const data = await fetch(url, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json" 
@@ -35,12 +41,16 @@ const ChatInput = () => {
                 body: JSON.stringify({
                     message
                 })
-            })
-            const data = await res.json();
+            }).then(res => res.json());
+            
+            return [data.message, ...messages!]
             console.log("message uploaded:: ", data)
         }
 
-        uploadMessage()
+        await mutate(uploadMessage, {
+            optimisticData: [message, ...messages!],
+            rollbackOnError: true,
+        })
     } 
   return (
     <>
@@ -48,14 +58,14 @@ const ChatInput = () => {
             <input
                 className='flex-1 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent px-5 py-3 disabled:opacity-50 disabled:cursor-not-allowed'
                 type="text"
-                value={data}
-                onChange={(e) => setData(e.target.value)}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
                 placeholder="Enter message here..."
             />
             <button
                 className='disabled:opacity-50 disabled:cursor-not-allowed bg-blue-500 rounded text-white font-bold hover:bg-blue-700 py-2 px-4'
                 type='submit'
-                disabled={!data}
+                disabled={!input}
             >
                 Send
             </button>
